@@ -204,13 +204,5 @@
       "Whittling"
     ],
     "finish_recommendation": "Very easy to finish. Paint, stain, or clear coat all work well. Pre-conditioner helps with even stain absorption."
-  },
-  {
-    "name": "New Species",
-    "hardness_janka": 0,
-    "grain_type": "",
-    "beginner_friendly": false,
-    "best_uses": [],
-    "finish_recommendation": ""
   }
 ]
