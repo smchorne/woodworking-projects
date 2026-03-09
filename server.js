@@ -38,7 +38,7 @@ app.post('/api/plan', async (req, res) => {
   try {
     // Stream the response from Claude
     const stream = client.messages.stream({
-      model: 'claude-opus-4-6',
+      model: 'claude-sonnet-4-6',
       max_tokens: 4096,
 
       // System prompt defines Claude's role and the output format
