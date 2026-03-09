@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Species Guide Admin</title>
+  <style>
+    /* ── Reset & base ── */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Georgia, serif;
+      background: #f5f0e8;
+      color: #2c1f0e;
+      min-height: 100vh;
+    }
+
+    /* ── Password screen ── */
+    #login-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 1rem;
+    }
+
+    .login-box {
+      background: #fff9f0;
+      border: 1px solid #d4b896;
+      border-radius: 8px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 340px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+      text-align: center;
+    }
+
+    .login-box h1 { font-size: 1.2rem; margin-bottom: 0.25rem; color: #3d2208; }
+    .login-box p  { font-size: 0.8rem; color: #9a7550; margin-bottom: 1.5rem; }
+
+    .login-box input {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      border: 1px solid #c4a882;
+      border-radius: 4px;
+      font-size: 1rem;
+      font-family: Georgia, serif;
+      background: #fffdf8;
+      margin-bottom: 0.75rem;
+      text-align: center;
+      letter-spacing: 0.1em;
+    }
+
+    .login-box input:focus { outline: 2px solid #8b5e3c; }
+
+    .login-error {
+      color: #a03020;
+      font-size: 0.82rem;
+      margin-bottom: 0.75rem;
+      min-height: 1.2em;
+    }
+
+    /* ── Admin UI (hidden until logged in) ── */
+    #admin-ui { display: none; }
+
+    /* Sticky top bar */
+    .top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: #3d2208;
+      color: #fff9f0;
+      padding: 0.75rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    .top-bar h1 { font-size: 1rem; letter-spacing: 0.04em; }
+
+    .top-bar-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+    /* ── Buttons ── */
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 4px;
+      padding: 0.45rem 0.9rem;
+      font-size: 0.85rem;
+      font-family: Georgia, serif;
+      transition: background 0.15s;
+    }
+
+    .btn-primary   { background: #d4a855; color: #2c1f0e; }
+    .btn-primary:hover { background: #c49840; }
+
+    .btn-secondary { background: #5a3a1a; color: #fff9f0; }
+    .btn-secondary:hover { background: #3d2208; }
+
+    .btn-danger    { background: #a03020; color: #fff9f0; }
+    .btn-danger:hover { background: #7a2010; }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid #d4b896;
+      color: #5a3a1a;
+    }
+    .btn-ghost:hover { background: #f5ede0; }
+
+    .btn-logout {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.3);
+      color: #fff9f0;
+      font-size: 0.75rem;
+      padding: 0.35rem 0.7rem;
+    }
+    .btn-logout:hover { background: rgba(255,255,255,0.1); }
+
+    /* ── Page content ── */
+    .content {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 1.25rem;
+    }
+
+    /* ── Section cards ── */
+    .section-card {
+      background: #fff9f0;
+      border: 1px solid #d4b896;
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    .section-card h2 {
+      font-size: 1rem;
+      color: #3d2208;
+      margin-bottom: 0.25rem;
+      border-bottom: 1px solid #e8d5c0;
+      padding-bottom: 0.5rem;
+    }
+
+    .section-hint {
+      font-size: 0.78rem;
+      color: #9a7550;
+      margin-bottom: 1rem;
+      font-style: italic;
+    }
+
+    /* ── Uses library ── */
+    .uses-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .use-chip {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      background: #ede4d4;
+      border: 1px solid #d4b896;
+      border-radius: 999px;
+      padding: 0.25rem 0.6rem 0.25rem 0.75rem;
+      font-size: 0.82rem;
+      color: #3d2208;
+    }
+
+    .use-chip button {
+      background: transparent;
+      color: #a05030;
+      padding: 0 0.1rem;
+      font-size: 0.9rem;
+      line-height: 1;
+    }
+    .use-chip button:hover { color: #7a2010; }
+
+    .add-use-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .add-use-row input {
+      flex: 1;
+      padding: 0.45rem 0.7rem;
+      border: 1px solid #c4a882;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      font-family: Georgia, serif;
+      background: #fffdf8;
+    }
+    .add-use-row input:focus { outline: 2px solid #8b5e3c; }
+
+    /* ── Species list ── */
+    .species-item {
+      border: 1px solid #d4b896;
+      border-radius: 6px;
+      margin-bottom: 0.75rem;
+      overflow: hidden;
+    }
+
+    /* Clickable header row to expand/collapse */
+    .species-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.7rem 1rem;
+      background: #f5ede0;
+      cursor: pointer;
+      gap: 0.5rem;
+      user-select: none;
+    }
+
+    .species-header:hover { background: #ede4d4; }
+
+    .species-header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .species-name-display { font-size: 0.95rem; font-weight: bold; color: #3d2208; }
+
+    .beginner-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #5a9e5a;
+      flex-shrink: 0;
+      title: "Beginner friendly";
+    }
+
+    .chevron {
+      font-size: 0.7rem;
+      color: #9a7550;
+      transition: transform 0.15s;
+    }
+    .species-item.open .chevron { transform: rotate(180deg); }
+
+    /* Edit form inside each species */
+    .species-form {
+      display: none;
+      padding: 1rem;
+      border-top: 1px solid #d4b896;
+      background: #fffdf8;
+    }
+
+    .species-item.open .species-form { display: block; }
+
+    /* Two-column layout for basic fields on wider screens */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem 1rem;
+      margin-bottom: 1rem;
+    }
+
+    @media (max-width: 500px) {
+      .form-grid { grid-template-columns: 1fr; }
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #7a5c3a;
+      margin-bottom: 0.25rem;
+    }
+
+    .field input[type="text"],
+    .field input[type="number"] {
+      width: 100%;
+      padding: 0.45rem 0.6rem;
+      border: 1px solid #c4a882;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      font-family: Georgia, serif;
+      background: #fffdf8;
+      color: #2c1f0e;
+    }
+
+    .field input:focus { outline: 2px solid #8b5e3c; }
+
+    /* Beginner-friendly toggle */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .toggle-row input[type="checkbox"] { width: 1.1rem; height: 1.1rem; cursor: pointer; }
+
+    .toggle-row label {
+      font-size: 0.85rem;
+      color: #3d2208;
+      cursor: pointer;
+    }
+
+    /* Uses checkboxes */
+    .uses-section-label {
+      font-size: 0.72rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #7a5c3a;
+      margin-bottom: 0.4rem;
+    }
+
+    .uses-checkboxes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+    }
+
+    .use-checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      background: #f5ede0;
+      border: 1px solid #d4b896;
+      border-radius: 999px;
+      padding: 0.2rem 0.7rem 0.2rem 0.5rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+
+    .use-checkbox-label:has(input:checked) {
+      background: #d4a855;
+      border-color: #c49840;
+      color: #2c1f0e;
+    }
+
+    .use-checkbox-label input { cursor: pointer; }
+
+    /* Finish recommendation textarea */
+    .field textarea {
+      width: 100%;
+      padding: 0.5rem 0.6rem;
+      border: 1px solid #c4a882;
+      border-radius: 4px;
+      font-size: 0.88rem;
+      font-family: Georgia, serif;
+      background: #fffdf8;
+      color: #2c1f0e;
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .field textarea:focus { outline: 2px solid #8b5e3c; }
+
+    /* Row of action buttons at the bottom of each form */
+    .form-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.5rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid #e8d5c0;
+    }
+
+    /* ── Status bar ── */
+    .status-bar {
+      background: #e8f5e8;
+      border: 1px solid #a8d5a8;
+      border-radius: 6px;
+      padding: 0.6rem 1rem;
+      font-size: 0.82rem;
+      color: #2d6e2d;
+      margin-bottom: 1rem;
+      display: none;
+    }
+
+    /* ── Export note ── */
+    .export-note {
+      font-size: 0.78rem;
+      color: #7a5c3a;
+      margin-top: 0.5rem;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ════════════════════════════════════════════════
+       PASSWORD SCREEN
+       ════════════════════════════════════════════════ -->
+  <div id="login-screen">
+    <div class="login-box">
+      <h1>&#9881; Species Guide Admin</h1>
+      <p>Site owner access only</p>
+      <input
+        type="password"
+        id="password-input"
+        placeholder="Password"
+        autocomplete="current-password"
+      />
+      <div class="login-error" id="login-error"></div>
+      <button class="btn-primary" style="width:100%;padding:0.6rem;" onclick="tryLogin()">
+        Enter
+      </button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════
+       ADMIN UI
+       ════════════════════════════════════════════════ -->
+  <div id="admin-ui">
+
+    <!-- Sticky top bar -->
+    <div class="top-bar">
+      <h1>&#9881; Species Guide Admin</h1>
+      <div class="top-bar-actions">
+        <a href="species.html" style="color:#d4a855;font-size:0.8rem;text-decoration:none;align-self:center;">
+          &#8592; Back to Guide
+        </a>
+        <button class="btn-primary" onclick="saveToLocalStorage()">Save Changes</button>
+        <button class="btn-secondary" onclick="exportJSON()">Export JSON</button>
+        <button class="btn-logout" onclick="logout()">Log out</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- Status message -->
+      <div class="status-bar" id="status-bar"></div>
+
+      <!-- ── Uses Library ── -->
+      <div class="section-card">
+        <h2>Uses Library</h2>
+        <p class="section-hint">
+          Define the master list of uses. Each species is tagged with uses from this list.
+          Removing a use here will remove it from all species.
+        </p>
+        <div class="uses-list" id="uses-library-display"></div>
+        <div class="add-use-row">
+          <input
+            type="text"
+            id="new-use-input"
+            placeholder="New use (e.g. Turning, Inlays…)"
+            onkeydown="if(event.key==='Enter') addUse()"
+          />
+          <button class="btn-ghost" onclick="addUse()">+ Add</button>
+        </div>
+      </div>
+
+      <!-- ── Species List ── -->
+      <div class="section-card">
+        <h2>Species</h2>
+        <p class="section-hint">
+          Click a species to expand and edit. Changes are saved to your browser
+          and reflected on the Species Guide immediately.
+        </p>
+        <div id="species-list"></div>
+        <button class="btn-ghost" style="width:100%;margin-top:0.5rem;" onclick="addSpecies()">
+          + Add New Species
+        </button>
+      </div>
+
+      <!-- ── Export instructions ── -->
+      <div class="section-card">
+        <h2>Deploying Changes</h2>
+        <p class="section-hint" style="margin-bottom:0">
+          Changes saved here update your browser instantly. To make them permanent on the live site:
+        </p>
+        <ol class="export-note" style="margin-top:0.75rem;padding-left:1.25rem;">
+          <li>Click <strong>Export JSON</strong> above to download the updated file.</li>
+          <li>Replace <code>wood-species.json</code> in your repo with the downloaded file.</li>
+          <li>Run <code>git add wood-species.json &amp;&amp; git commit -m "Update species data"</code></li>
+          <li>Run <code>git push origin main</code></li>
+        </ol>
+        <button class="btn-danger" style="margin-top:1rem;font-size:0.78rem;" onclick="clearLocalStorage()">
+          Clear saved changes (revert to deployed JSON)
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // ════════════════════════════════════════════════════════════════════════
+    // CONFIGURATION
+    // Change this password to whatever you'd like. Note: it's visible in
+    // source code, so this is a convenience lock, not a security guarantee.
+    // ════════════════════════════════════════════════════════════════════════
+    var ADMIN_PASSWORD = 'woodshop';
+
+    // localStorage keys
+    var LS_SPECIES = 'wsg_species';   // species array
+    var LS_USES    = 'wsg_uses';      // uses library array
+    var LS_AUTH    = 'wsg_auth';      // login flag
+
+    // Working data (in memory while editing)
+    var usesLibrary = [];   // master list of use strings
+    var speciesData = [];   // array of species objects
+
+    // ── Login ───────────────────────────────────────────────────────────────
+    // Allow Enter key on password field
+    document.getElementById('password-input').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') tryLogin();
+    });
+
+    function tryLogin() {
+      var input = document.getElementById('password-input').value;
+      if (input === ADMIN_PASSWORD) {
+        sessionStorage.setItem(LS_AUTH, '1'); // session only — clears on tab close
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('admin-ui').style.display = 'block';
+        loadData();
+      } else {
+        document.getElementById('login-error').textContent = 'Incorrect password.';
+        document.getElementById('password-input').value = '';
+      }
+    }
+
+    function logout() {
+      sessionStorage.removeItem(LS_AUTH);
+      location.reload();
+    }
+
+    // Auto-login if already authenticated this session
+    if (sessionStorage.getItem(LS_AUTH) === '1') {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('admin-ui').style.display = 'block';
+      loadData();
+    }
+
+    // ── Load data ───────────────────────────────────────────────────────────
+    // Prefer localStorage (saved edits), fall back to fetching the JSON file
+    function loadData() {
+      var savedSpecies = localStorage.getItem(LS_SPECIES);
+      var savedUses    = localStorage.getItem(LS_USES);
+
+      if (savedSpecies && savedUses) {
+        // Use locally saved edits
+        speciesData = JSON.parse(savedSpecies);
+        usesLibrary = JSON.parse(savedUses);
+        renderAll();
+      } else {
+        // Fetch from the deployed JSON file
+        fetch('wood-species.json')
+          .then(function (res) { return res.json(); })
+          .then(function (data) {
+            speciesData = data;
+            // Build initial uses library from all uses found in the data
+            var usesSet = new Set();
+            data.forEach(function (s) {
+              s.best_uses.forEach(function (u) { usesSet.add(u); });
+            });
+            usesLibrary = Array.from(usesSet).sort();
+            renderAll();
+          })
+          .catch(function () {
+            // If fetch fails (e.g. opening locally), start with empty data
+            speciesData = [];
+            usesLibrary = [];
+            renderAll();
+            showStatus('Could not load wood-species.json. Starting with empty data. If editing locally, deploy first or paste in data manually.', true);
+          });
+      }
+    }
+
+    // ── Save to localStorage ─────────────────────────────────────────────────
+    function saveToLocalStorage() {
+      collectAllFormData(); // pull current form values into speciesData
+      localStorage.setItem(LS_SPECIES, JSON.stringify(speciesData));
+      localStorage.setItem(LS_USES,    JSON.stringify(usesLibrary));
+      showStatus('Changes saved. Open species.html to see them live.');
+    }
+
+    function clearLocalStorage() {
+      if (!confirm('This will discard all unsaved edits and revert to the deployed JSON. Continue?')) return;
+      localStorage.removeItem(LS_SPECIES);
+      localStorage.removeItem(LS_USES);
+      location.reload();
+    }
+
+    // ── Export JSON ──────────────────────────────────────────────────────────
+    function exportJSON() {
+      collectAllFormData();
+      var json = JSON.stringify(speciesData, null, 2);
+      var blob = new Blob([json], { type: 'application/json' });
+      var url  = URL.createObjectURL(blob);
+      var a    = document.createElement('a');
+      a.href     = url;
+      a.download = 'wood-species.json';
+      a.click();
+      URL.revokeObjectURL(url);
+      showStatus('Exported wood-species.json. Replace the file in your repo and push to deploy.');
+    }
+
+    // ── Render everything ────────────────────────────────────────────────────
+    function renderAll() {
+      renderUsesLibrary();
+      renderSpeciesList();
+    }
+
+    // ── Uses library UI ──────────────────────────────────────────────────────
+    function renderUsesLibrary() {
+      var container = document.getElementById('uses-library-display');
+      container.innerHTML = '';
+
+      if (usesLibrary.length === 0) {
+        container.innerHTML = '<em style="font-size:0.82rem;color:#9a7550;">No uses defined yet.</em>';
+        return;
+      }
+
+      usesLibrary.forEach(function (use) {
+        var chip = document.createElement('div');
+        chip.className = 'use-chip';
+        chip.innerHTML =
+          '<span>' + escHtml(use) + '</span>' +
+          '<button title="Remove \'' + escHtml(use) + '\' from library" onclick="removeUse(\'' + escHtml(use) + '\')">✕</button>';
+        container.appendChild(chip);
+      });
+    }
+
+    function addUse() {
+      var input = document.getElementById('new-use-input');
+      var val   = input.value.trim();
+      if (!val) return;
+
+      // Prevent duplicates (case-insensitive)
+      var exists = usesLibrary.some(function (u) {
+        return u.toLowerCase() === val.toLowerCase();
+      });
+      if (exists) {
+        input.value = '';
+        return;
+      }
+
+      usesLibrary.push(val);
+      usesLibrary.sort();
+      input.value = '';
+      renderAll(); // re-render so new use appears in checkboxes too
+    }
+
+    function removeUse(use) {
+      if (!confirm('Remove "' + use + '" from the library? It will also be removed from any species that use it.')) return;
+
+      // Remove from library
+      usesLibrary = usesLibrary.filter(function (u) { return u !== use; });
+
+      // Remove from all species
+      speciesData.forEach(function (s) {
+        s.best_uses = s.best_uses.filter(function (u) { return u !== use; });
+      });
+
+      renderAll();
+    }
+
+    // ── Species list UI ──────────────────────────────────────────────────────
+    function renderSpeciesList() {
+      var container = document.getElementById('species-list');
+      container.innerHTML = '';
+
+      speciesData.forEach(function (species, index) {
+        container.appendChild(buildSpeciesItem(species, index));
+      });
+    }
+
+    function buildSpeciesItem(species, index) {
+      var item = document.createElement('div');
+      item.className = 'species-item';
+      item.id = 'species-item-' + index;
+
+      // ── Header (click to expand) ──
+      var header = document.createElement('div');
+      header.className = 'species-header';
+      header.onclick = function () { toggleSpecies(index); };
+
+      var left = document.createElement('div');
+      left.className = 'species-header-left';
+
+      // Green dot if beginner-friendly
+      if (species.beginner_friendly) {
+        var dot = document.createElement('div');
+        dot.className = 'beginner-dot';
+        dot.title = 'Beginner friendly';
+        left.appendChild(dot);
+      }
+
+      var nameSpan = document.createElement('span');
+      nameSpan.className = 'species-name-display';
+      nameSpan.textContent = species.name || 'Unnamed species';
+      left.appendChild(nameSpan);
+
+      var chevron = document.createElement('span');
+      chevron.className = 'chevron';
+      chevron.textContent = '▼';
+
+      header.appendChild(left);
+      header.appendChild(chevron);
+
+      // ── Edit form ──
+      var form = document.createElement('div');
+      form.className = 'species-form';
+
+      // Basic fields grid
+      form.innerHTML =
+        '<div class="form-grid">' +
+          '<div class="field">' +
+            '<label>Species Name</label>' +
+            '<input type="text" class="f-name" value="' + escHtml(species.name) + '" />' +
+          '</div>' +
+          '<div class="field">' +
+            '<label>Janka Hardness (lbf)</label>' +
+            '<input type="number" class="f-janka" value="' + species.hardness_janka + '" min="0" />' +
+          '</div>' +
+          '<div class="field">' +
+            '<label>Grain Type</label>' +
+            '<input type="text" class="f-grain" value="' + escHtml(species.grain_type) + '" />' +
+          '</div>' +
+        '</div>' +
+        '<div class="toggle-row">' +
+          '<input type="checkbox" class="f-beginner" id="beginner-' + index + '" ' + (species.beginner_friendly ? 'checked' : '') + ' />' +
+          '<label for="beginner-' + index + '">Beginner friendly</label>' +
+        '</div>' +
+        '<div class="uses-section-label">Best Uses</div>' +
+        '<div class="uses-checkboxes" id="uses-checkboxes-' + index + '"></div>' +
+        '<div class="field">' +
+          '<label>Finish Recommendation</label>' +
+          '<textarea class="f-finish" rows="3">' + escHtml(species.finish_recommendation) + '</textarea>' +
+        '</div>' +
+        '<div class="form-actions">' +
+          '<button class="btn-danger" onclick="deleteSpecies(' + index + ')">Delete Species</button>' +
+          '<button class="btn-primary" onclick="applySpeciesEdit(' + index + ')">Apply</button>' +
+        '</div>';
+
+      item.appendChild(header);
+      item.appendChild(form);
+
+      // Populate use checkboxes after appending to DOM
+      setTimeout(function () {
+        renderUsesCheckboxes(index, species.best_uses);
+      }, 0);
+
+      return item;
+    }
+
+    // Render use checkboxes for one species
+    function renderUsesCheckboxes(index, selectedUses) {
+      var container = document.getElementById('uses-checkboxes-' + index);
+      if (!container) return;
+      container.innerHTML = '';
+
+      if (usesLibrary.length === 0) {
+        container.innerHTML = '<em style="font-size:0.78rem;color:#9a7550;">Add uses to the library above first.</em>';
+        return;
+      }
+
+      usesLibrary.forEach(function (use, i) {
+        var isChecked = selectedUses.indexOf(use) !== -1;
+        var lbl = document.createElement('label');
+        lbl.className = 'use-checkbox-label';
+        lbl.innerHTML =
+          '<input type="checkbox" value="' + escHtml(use) + '" ' + (isChecked ? 'checked' : '') + ' /> ' +
+          escHtml(use);
+        container.appendChild(lbl);
+      });
+    }
+
+    // Toggle expand/collapse
+    function toggleSpecies(index) {
+      var item = document.getElementById('species-item-' + index);
+      item.classList.toggle('open');
+    }
+
+    // Read form values for one species and update speciesData
+    function applySpeciesEdit(index) {
+      readSpeciesForm(index);
+      // Re-render just this item's header to reflect name/beginner changes
+      var item = document.getElementById('species-item-' + index);
+      var wasOpen = item.classList.contains('open');
+      var newItem = buildSpeciesItem(speciesData[index], index);
+      if (wasOpen) newItem.classList.add('open');
+      item.parentNode.replaceChild(newItem, item);
+      setTimeout(function () { renderUsesCheckboxes(index, speciesData[index].best_uses); }, 0);
+      showStatus('Applied changes to "' + speciesData[index].name + '". Click Save Changes to keep them.');
+    }
+
+    // Read one species form into speciesData
+    function readSpeciesForm(index) {
+      var item = document.getElementById('species-item-' + index);
+      if (!item) return;
+
+      // Read checked uses
+      var checkedUses = [];
+      item.querySelectorAll('.uses-checkboxes input[type="checkbox"]:checked').forEach(function (cb) {
+        checkedUses.push(cb.value);
+      });
+
+      speciesData[index] = {
+        name:                item.querySelector('.f-name').value.trim(),
+        hardness_janka:      parseInt(item.querySelector('.f-janka').value, 10) || 0,
+        grain_type:          item.querySelector('.f-grain').value.trim(),
+        beginner_friendly:   item.querySelector('.f-beginner').checked,
+        best_uses:           checkedUses,
+        finish_recommendation: item.querySelector('.f-finish').value.trim()
+      };
+    }
+
+    // Read ALL open/rendered forms into speciesData before saving/exporting
+    function collectAllFormData() {
+      speciesData.forEach(function (_, index) {
+        var item = document.getElementById('species-item-' + index);
+        if (item) readSpeciesForm(index);
+      });
+    }
+
+    // Add a blank species
+    function addSpecies() {
+      speciesData.push({
+        name: 'New Species',
+        hardness_janka: 0,
+        grain_type: '',
+        beginner_friendly: false,
+        best_uses: [],
+        finish_recommendation: ''
+      });
+      renderSpeciesList();
+      // Open the new item
+      var newIndex = speciesData.length - 1;
+      var item = document.getElementById('species-item-' + newIndex);
+      item.classList.add('open');
+      item.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Delete a species
+    function deleteSpecies(index) {
+      var name = speciesData[index].name || 'this species';
+      if (!confirm('Delete "' + name + '"? This cannot be undone until you reload without saving.')) return;
+      speciesData.splice(index, 1);
+      renderSpeciesList();
+      showStatus('Deleted "' + name + '". Click Save Changes to make it permanent.');
+    }
+
+    // ── Status message ───────────────────────────────────────────────────────
+    function showStatus(msg, isError) {
+      var bar = document.getElementById('status-bar');
+      bar.textContent = msg;
+      bar.style.display = 'block';
+      if (isError) {
+        bar.style.background = '#fde8e8';
+        bar.style.borderColor = '#e8a8a8';
+        bar.style.color = '#a03020';
+      } else {
+        bar.style.background = '#e8f5e8';
+        bar.style.borderColor = '#a8d5a8';
+        bar.style.color = '#2d6e2d';
+      }
+      // Auto-hide after 4 seconds
+      setTimeout(function () { bar.style.display = 'none'; }, 4000);
+    }
+
+    // ── Escape HTML to prevent XSS when inserting user text into innerHTML ──
+    function escHtml(str) {
+      if (typeof str !== 'string') return '';
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+  </script>
+
+</body>
+</html>

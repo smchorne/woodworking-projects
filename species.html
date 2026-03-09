@@ -29,6 +29,7 @@
     /* Nav link row */
     .nav {
       display: flex;
+      align-items: center;
       gap: 0.75rem;
       margin-bottom: 0.75rem;
     }
@@ -49,6 +50,17 @@
       opacity: 1;
       pointer-events: none;
     }
+
+    /* Settings gear icon — pushed to the right */
+    .nav-settings {
+      margin-left: auto;
+      font-size: 1rem;
+      opacity: 0.45;
+      text-decoration: none !important;
+      color: #fff9f0 !important;
+      transition: opacity 0.15s;
+    }
+    .nav-settings:hover { opacity: 0.9 !important; }
 
     header h1 {
       font-size: 1.2rem;
@@ -280,6 +292,7 @@
     <nav class="nav">
       <a href="index.html">&#128296; Cut List Calculator</a>
       <a href="species.html" class="active">&#128218; Species Guide</a>
+      <a href="admin.html" class="nav-settings" title="Admin">&#9881;</a>
     </nav>
     <h1>&#128218; Wood Species Field Guide</h1>
     <p>Quick reference for the workshop or lumber yard</p>
@@ -312,22 +325,32 @@
     let activeFilter  = 'all'; // currently selected pill filter
     let searchQuery   = '';    // current search string
 
-    // ── Load JSON and kick everything off ─────────────────────────────────
-    fetch('wood-species.json')
-      .then(function (res) {
-        if (!res.ok) throw new Error('Could not load wood-species.json');
-        return res.json();
-      })
-      .then(function (data) {
-        allSpecies = data;
-        buildFilterPills(data);
-        render();
-      })
-      .catch(function (err) {
-        document.getElementById('grid').innerHTML =
-          '<p class="no-results">Error loading species data: ' + err.message + '</p>';
-        document.getElementById('results-bar').textContent = '';
-      });
+    // ── Load data and kick everything off ─────────────────────────────────
+    // Check localStorage first (admin edits land here for instant preview),
+    // then fall back to fetching the deployed JSON file.
+    var localData = localStorage.getItem('wsg_species');
+
+    if (localData) {
+      allSpecies = JSON.parse(localData);
+      buildFilterPills(allSpecies);
+      render();
+    } else {
+      fetch('wood-species.json')
+        .then(function (res) {
+          if (!res.ok) throw new Error('Could not load wood-species.json');
+          return res.json();
+        })
+        .then(function (data) {
+          allSpecies = data;
+          buildFilterPills(data);
+          render();
+        })
+        .catch(function (err) {
+          document.getElementById('grid').innerHTML =
+            '<p class="no-results">Error loading species data: ' + err.message + '</p>';
+          document.getElementById('results-bar').textContent = '';
+        });
+    }
 
     // ── Build extra filter pills from all unique uses in the data ──────────
     function buildFilterPills(data) {
