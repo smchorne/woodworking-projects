@@ -1,0 +1,130 @@
+[
+  {
+    "name": "Red Oak",
+    "hardness_janka": 1290,
+    "grain_type": "Open grain",
+    "beginner_friendly": false,
+    "best_uses": ["Furniture", "Flooring", "Cabinets", "Trim"],
+    "finish_recommendation": "Pre-conditioner recommended before staining to avoid blotching. Takes stain and polyurethane well."
+  },
+  {
+    "name": "White Oak",
+    "hardness_janka": 1360,
+    "grain_type": "Open grain with ray flecks",
+    "beginner_friendly": false,
+    "best_uses": ["Furniture", "Flooring", "Boat building", "Wine barrels"],
+    "finish_recommendation": "Oil finishes and polyurethane both work well. Tannins can react with water-based finishes — test first."
+  },
+  {
+    "name": "Hard Maple",
+    "hardness_janka": 1450,
+    "grain_type": "Tight, fine grain",
+    "beginner_friendly": false,
+    "best_uses": ["Cutting boards", "Workbenches", "Flooring", "Cabinets"],
+    "finish_recommendation": "Resists stain absorption — best left natural or with a clear finish like oil or lacquer."
+  },
+  {
+    "name": "Black Walnut",
+    "hardness_janka": 1010,
+    "grain_type": "Straight to slightly wavy",
+    "beginner_friendly": false,
+    "best_uses": ["Fine furniture", "Gun stocks", "Turning", "Veneers"],
+    "finish_recommendation": "Looks stunning with just an oil finish (tung or Danish oil). Avoid dark stains — the natural color is the appeal."
+  },
+  {
+    "name": "Cherry",
+    "hardness_janka": 950,
+    "grain_type": "Fine, straight grain",
+    "beginner_friendly": false,
+    "best_uses": ["Fine furniture", "Cabinets", "Millwork", "Turning"],
+    "finish_recommendation": "Darkens beautifully with age and UV exposure. Use a light oil or shellac to enhance color. Avoid heavy stains."
+  },
+  {
+    "name": "White Ash",
+    "hardness_janka": 1320,
+    "grain_type": "Open, coarse grain",
+    "beginner_friendly": false,
+    "best_uses": ["Tool handles", "Baseball bats", "Furniture", "Flooring"],
+    "finish_recommendation": "Takes stain evenly. Polyurethane or oil-based finishes work well. Can be ebonized effectively."
+  },
+  {
+    "name": "Poplar",
+    "hardness_janka": 540,
+    "grain_type": "Fine, straight grain",
+    "beginner_friendly": true,
+    "best_uses": ["Painted furniture", "Cabinet interiors", "Trim", "Drawers"],
+    "finish_recommendation": "Best painted — the greenish tint doesn't stain attractively. Excellent base for primer and paint."
+  },
+  {
+    "name": "Douglas Fir",
+    "hardness_janka": 660,
+    "grain_type": "Straight, pronounced grain",
+    "beginner_friendly": true,
+    "best_uses": ["Framing", "Structural beams", "Shelving", "Outdoor furniture"],
+    "finish_recommendation": "Accepts stain but grain can be uneven. Exterior projects need a UV-protective finish or paint."
+  },
+  {
+    "name": "Eastern White Pine",
+    "hardness_janka": 380,
+    "grain_type": "Straight, soft grain",
+    "beginner_friendly": true,
+    "best_uses": ["Rustic furniture", "Shelving", "Paneling", "Painted trim"],
+    "finish_recommendation": "Prone to blotching — always use a pre-conditioner before staining. Paint or clear wax work reliably."
+  },
+  {
+    "name": "Teak",
+    "hardness_janka": 1070,
+    "grain_type": "Straight to wavy, oily",
+    "beginner_friendly": false,
+    "best_uses": ["Outdoor furniture", "Boat decks", "Marine applications", "Flooring"],
+    "finish_recommendation": "High natural oil content — wipe with naphtha before finishing. Teak oil or leave unfinished outdoors. Glue joints need degreasing first."
+  },
+  {
+    "name": "Mahogany (Honduran)",
+    "hardness_janka": 800,
+    "grain_type": "Interlocked, ribbon-like",
+    "beginner_friendly": false,
+    "best_uses": ["Fine furniture", "Boat building", "Musical instruments", "Veneers"],
+    "finish_recommendation": "Takes stain and finish beautifully. Oil, lacquer, or varnish all work well. A grain filler improves smoothness."
+  },
+  {
+    "name": "Hickory",
+    "hardness_janka": 1820,
+    "grain_type": "Straight to wavy, coarse",
+    "beginner_friendly": false,
+    "best_uses": ["Tool handles", "Flooring", "Rustic furniture", "Cabinets"],
+    "finish_recommendation": "Very hard — sand thoroughly before finishing. Oil-based polyurethane recommended for durability."
+  },
+  {
+    "name": "Cedar (Western Red)",
+    "hardness_janka": 350,
+    "grain_type": "Straight, fine grain",
+    "beginner_friendly": true,
+    "best_uses": ["Outdoor furniture", "Fencing", "Closet lining", "Decking"],
+    "finish_recommendation": "Naturally rot-resistant. Leave unfinished outdoors (weathers to silver-grey) or use a clear exterior sealer to preserve color."
+  },
+  {
+    "name": "Birch",
+    "hardness_janka": 1260,
+    "grain_type": "Fine, tight grain",
+    "beginner_friendly": true,
+    "best_uses": ["Plywood", "Cabinets", "Painted furniture", "Turned objects"],
+    "finish_recommendation": "Similar to maple — resists stain evenly. Best with clear finishes or paint. Pre-conditioner helps if staining."
+  },
+  {
+    "name": "Purple Heart",
+    "hardness_janka": 1860,
+    "grain_type": "Straight to wavy",
+    "beginner_friendly": false,
+    "best_uses": ["Accent pieces", "Inlays", "Flooring", "Cutting boards"],
+    "finish_recommendation": "Vivid purple color fades to brown with UV exposure. Use a UV-inhibiting finish to preserve color. Oil finishes alone are not enough."
+  },
+  {
+    "name": "Basswood",
+    "hardness_janka": 410,
+    "grain_type": "Fine, uniform grain",
+    "beginner_friendly": true,
+    "best_uses": ["Carving", "Whittling", "Small boxes", "Painted projects"],
+    "finish_recommendation": "Very easy to finish. Paint, stain, or clear coat all work well. Pre-conditioner helps with even stain absorption."
+  }
+]
