@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wood Species Field Guide</title>
+  <style>
+    /* ── Reset & base ── */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Georgia, serif;
+      background: #f5f0e8;
+      color: #2c1f0e;
+      min-height: 100vh;
+    }
+
+    /* ── Sticky header with title + search ── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: #3d2208;
+      color: #fff9f0;
+      padding: 1rem 1.25rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    /* Nav link row */
+    .nav {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .nav a {
+      font-size: 0.75rem;
+      color: #d4a855;
+      text-decoration: none;
+      letter-spacing: 0.04em;
+      opacity: 0.9;
+    }
+
+    .nav a:hover { opacity: 1; text-decoration: underline; }
+
+    .nav a.active {
+      color: #fff9f0;
+      font-weight: bold;
+      opacity: 1;
+      pointer-events: none;
+    }
+
+    header h1 {
+      font-size: 1.2rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 0.6rem;
+    }
+
+    header p {
+      font-size: 0.75rem;
+      opacity: 0.65;
+      margin-bottom: 0.75rem;
+      font-style: italic;
+    }
+
+    /* Search bar */
+    .search-wrap {
+      position: relative;
+    }
+
+    .search-wrap input {
+      width: 100%;
+      padding: 0.6rem 0.75rem 0.6rem 2.2rem;
+      border: none;
+      border-radius: 6px;
+      background: #fff9f0;
+      color: #2c1f0e;
+      font-size: 1rem;
+      font-family: Georgia, serif;
+    }
+
+    .search-wrap input:focus {
+      outline: 2px solid #d4a855;
+    }
+
+    /* Magnifying glass icon (pure CSS) */
+    .search-wrap::before {
+      content: "⌕";
+      position: absolute;
+      left: 0.6rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.1rem;
+      color: #7a5c3a;
+      pointer-events: none;
+    }
+
+    /* Filter pills */
+    .filters {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.75rem 1.25rem;
+      background: #4e2d0a;
+      overflow-x: auto;
+      /* hide scrollbar on mobile but still scrollable */
+      scrollbar-width: none;
+    }
+    .filters::-webkit-scrollbar { display: none; }
+
+    .pill {
+      flex-shrink: 0;
+      padding: 0.3rem 0.85rem;
+      border-radius: 999px;
+      border: 1px solid #d4b896;
+      background: transparent;
+      color: #f5e6d0;
+      font-size: 0.78rem;
+      font-family: Georgia, serif;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+
+    .pill:hover,
+    .pill.active {
+      background: #d4a855;
+      border-color: #d4a855;
+      color: #2c1f0e;
+    }
+
+    /* ── Results count ── */
+    .results-bar {
+      padding: 0.6rem 1.25rem;
+      font-size: 0.78rem;
+      color: #7a5c3a;
+      background: #ede4d4;
+      border-bottom: 1px solid #d4b896;
+    }
+
+    /* ── Card grid ── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1rem;
+      padding: 1rem 1.25rem 2rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* ── Species card ── */
+    .card {
+      background: #fff9f0;
+      border: 1px solid #d4b896;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+
+    /* Colored top bar — indicates beginner-friendly */
+    .card-bar {
+      height: 5px;
+      background: #c4a882; /* default — intermediate/advanced */
+    }
+    .card-bar.beginner {
+      background: #5a9e5a; /* green for beginner-friendly */
+    }
+
+    .card-body {
+      padding: 1rem;
+    }
+
+    /* Card header row: name + beginner badge */
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .card-header h2 {
+      font-size: 1.05rem;
+      color: #3d2208;
+      line-height: 1.2;
+    }
+
+    .badge {
+      flex-shrink: 0;
+      font-size: 0.65rem;
+      font-family: sans-serif;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.5rem;
+      border-radius: 999px;
+      background: #d6eed6;
+      color: #2d6e2d;
+      border: 1px solid #a8d5a8;
+      white-space: nowrap;
+    }
+
+    /* Stats row: hardness + grain */
+    .stats {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.85rem;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      background: #f5ede0;
+      border: 1px solid #e0cdb0;
+      border-radius: 5px;
+      padding: 0.3rem 0.6rem;
+      font-size: 0.78rem;
+    }
+
+    .stat .stat-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #9a7550;
+      display: block;
+      margin-bottom: 0.1rem;
+    }
+
+    .stat .stat-value {
+      font-weight: bold;
+      color: #3d2208;
+    }
+
+    /* Section label inside card */
+    .section-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #9a7550;
+      margin-bottom: 0.3rem;
+      margin-top: 0.75rem;
+    }
+
+    /* Best uses tags */
+    .uses {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      margin-bottom: 0.1rem;
+    }
+
+    .use-tag {
+      font-size: 0.75rem;
+      background: #ede4d4;
+      border-radius: 4px;
+      padding: 0.2rem 0.5rem;
+      color: #5a3a1a;
+    }
+
+    /* Finish recommendation text */
+    .finish-text {
+      font-size: 0.82rem;
+      color: #4a3020;
+      line-height: 1.5;
+    }
+
+    /* ── No results message ── */
+    .no-results {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: #9a7550;
+      font-style: italic;
+      font-size: 1rem;
+      grid-column: 1 / -1; /* span full grid width */
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Sticky header ── -->
+  <header>
+    <nav class="nav">
+      <a href="index.html">&#128296; Cut List Calculator</a>
+      <a href="species.html" class="active">&#128218; Species Guide</a>
+    </nav>
+    <h1>&#128218; Wood Species Field Guide</h1>
+    <p>Quick reference for the workshop or lumber yard</p>
+    <div class="search-wrap">
+      <input
+        type="search"
+        id="search"
+        placeholder="Search by name or use (e.g. flooring, carving…)"
+        autocomplete="off"
+      />
+    </div>
+  </header>
+
+  <!-- ── Filter pills ── -->
+  <div class="filters" id="filters">
+    <button class="pill active" data-filter="all">All species</button>
+    <button class="pill" data-filter="beginner">Beginner friendly</button>
+    <!-- Additional use-based pills are added by JavaScript -->
+  </div>
+
+  <!-- ── Results count ── -->
+  <div class="results-bar" id="results-bar">Loading…</div>
+
+  <!-- ── Card grid (filled by JavaScript) ── -->
+  <div class="grid" id="grid"></div>
+
+  <script>
+    // ── State ──────────────────────────────────────────────────────────────
+    let allSpecies    = [];   // full dataset loaded from JSON
+    let activeFilter  = 'all'; // currently selected pill filter
+    let searchQuery   = '';    // current search string
+
+    // ── Load JSON and kick everything off ─────────────────────────────────
+    fetch('wood-species.json')
+      .then(function (res) {
+        if (!res.ok) throw new Error('Could not load wood-species.json');
+        return res.json();
+      })
+      .then(function (data) {
+        allSpecies = data;
+        buildFilterPills(data);
+        render();
+      })
+      .catch(function (err) {
+        document.getElementById('grid').innerHTML =
+          '<p class="no-results">Error loading species data: ' + err.message + '</p>';
+        document.getElementById('results-bar').textContent = '';
+      });
+
+    // ── Build extra filter pills from all unique uses in the data ──────────
+    function buildFilterPills(data) {
+      // Collect every unique "use" across all species
+      const usesSet = new Set();
+      data.forEach(function (s) {
+        s.best_uses.forEach(function (u) { usesSet.add(u); });
+      });
+
+      // Sort alphabetically and add a pill for each
+      const filtersEl = document.getElementById('filters');
+      Array.from(usesSet).sort().forEach(function (use) {
+        const btn = document.createElement('button');
+        btn.className = 'pill';
+        btn.textContent = use;
+        btn.dataset.filter = use;
+        btn.addEventListener('click', onPillClick);
+        filtersEl.appendChild(btn);
+      });
+    }
+
+    // ── Handle pill clicks ─────────────────────────────────────────────────
+    document.getElementById('filters').addEventListener('click', onPillClick);
+
+    function onPillClick(e) {
+      const btn = e.target.closest('.pill');
+      if (!btn) return;
+
+      // Update active state on all pills
+      document.querySelectorAll('.pill').forEach(function (p) {
+        p.classList.remove('active');
+      });
+      btn.classList.add('active');
+
+      activeFilter = btn.dataset.filter;
+      render();
+    }
+
+    // ── Handle search input ────────────────────────────────────────────────
+    document.getElementById('search').addEventListener('input', function (e) {
+      searchQuery = e.target.value.trim().toLowerCase();
+      render();
+    });
+
+    // ── Filter logic ───────────────────────────────────────────────────────
+    function filterSpecies() {
+      return allSpecies.filter(function (s) {
+
+        // Pill filter
+        if (activeFilter === 'beginner' && !s.beginner_friendly) return false;
+        if (activeFilter !== 'all' && activeFilter !== 'beginner') {
+          // Filter by specific use — check if any use matches the active filter
+          const hasUse = s.best_uses.some(function (u) {
+            return u.toLowerCase() === activeFilter.toLowerCase();
+          });
+          if (!hasUse) return false;
+        }
+
+        // Search filter — match against name or any use
+        if (searchQuery) {
+          const nameMatch = s.name.toLowerCase().includes(searchQuery);
+          const useMatch  = s.best_uses.some(function (u) {
+            return u.toLowerCase().includes(searchQuery);
+          });
+          if (!nameMatch && !useMatch) return false;
+        }
+
+        return true;
+      });
+    }
+
+    // ── Render cards ───────────────────────────────────────────────────────
+    function render() {
+      const results = filterSpecies();
+      const grid    = document.getElementById('grid');
+      const bar     = document.getElementById('results-bar');
+
+      // Update results count
+      bar.textContent = results.length + ' of ' + allSpecies.length + ' species shown';
+
+      // Clear previous cards
+      grid.innerHTML = '';
+
+      if (results.length === 0) {
+        grid.innerHTML = '<p class="no-results">No species match your search.</p>';
+        return;
+      }
+
+      // Build a card for each matching species
+      results.forEach(function (s) {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        // Top color bar (green if beginner-friendly)
+        const bar = document.createElement('div');
+        bar.className = 'card-bar' + (s.beginner_friendly ? ' beginner' : '');
+
+        // Uses tags HTML
+        const useTags = s.best_uses.map(function (u) {
+          return '<span class="use-tag">' + u + '</span>';
+        }).join('');
+
+        // Card inner HTML
+        card.innerHTML =
+          '<div class="card-bar' + (s.beginner_friendly ? ' beginner' : '') + '"></div>' +
+          '<div class="card-body">' +
+            '<div class="card-header">' +
+              '<h2>' + s.name + '</h2>' +
+              (s.beginner_friendly ? '<span class="badge">Beginner friendly</span>' : '') +
+            '</div>' +
+            '<div class="stats">' +
+              '<div class="stat">' +
+                '<span class="stat-label">Janka Hardness</span>' +
+                '<span class="stat-value">' + s.hardness_janka.toLocaleString() + ' lbf</span>' +
+              '</div>' +
+              '<div class="stat">' +
+                '<span class="stat-label">Grain</span>' +
+                '<span class="stat-value">' + s.grain_type + '</span>' +
+              '</div>' +
+            '</div>' +
+            '<div class="section-label">Best Uses</div>' +
+            '<div class="uses">' + useTags + '</div>' +
+            '<div class="section-label">Finishing</div>' +
+            '<p class="finish-text">' + s.finish_recommendation + '</p>' +
+          '</div>';
+
+        grid.appendChild(card);
+      });
+    }
+  </script>
+
+</body>
+</html>

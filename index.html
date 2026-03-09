@@ -23,6 +23,35 @@
       letter-spacing: 0.03em;
     }
 
+    /* ── Top nav bar ── */
+    .site-nav {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+      padding: 0.6rem 1rem;
+      background: #3d2208;
+      border-radius: 6px;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .site-nav a {
+      font-size: 0.8rem;
+      color: #d4a855;
+      text-decoration: none;
+      letter-spacing: 0.04em;
+    }
+
+    .site-nav a:hover { text-decoration: underline; }
+
+    .site-nav a.active {
+      color: #fff9f0;
+      font-weight: bold;
+      pointer-events: none;
+    }
+
     .subtitle {
       text-align: center;
       font-size: 0.9rem;
@@ -260,6 +289,11 @@
   </style>
 </head>
 <body>
+
+  <nav class="site-nav">
+    <a href="index.html" class="active">&#128296; Cut List Calculator</a>
+    <a href="species.html">&#128218; Species Guide</a>
+  </nav>
 
   <h1>&#128296; Board Feet Calculator</h1>
   <p class="subtitle">Enter your cut list — find out exactly how much lumber to buy</p>
