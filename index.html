@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Board Feet Calculator</title>
+  <style>
+    /* ── Reset & base ── */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Georgia, serif;
+      background: #f5f0e8;
+      color: #2c1f0e;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.8rem;
+      margin-bottom: 0.25rem;
+      letter-spacing: 0.03em;
+    }
+
+    .subtitle {
+      text-align: center;
+      font-size: 0.9rem;
+      color: #7a5c3a;
+      margin-bottom: 2rem;
+    }
+
+    /* ── Card container ── */
+    .card {
+      background: #fff9f0;
+      border: 1px solid #d4b896;
+      border-radius: 8px;
+      padding: 1.5rem;
+      max-width: 820px;
+      margin: 0 auto 2rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    .card h2 {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid #d4b896;
+      padding-bottom: 0.5rem;
+      color: #5a3a1a;
+    }
+
+    /* ── Project name field ── */
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: bold;
+      margin-bottom: 0.25rem;
+      color: #5a3a1a;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #c4a882;
+      border-radius: 4px;
+      background: #fffdf8;
+      font-size: 0.95rem;
+      color: #2c1f0e;
+      margin-bottom: 1rem;
+    }
+
+    input:focus {
+      outline: 2px solid #8b5e3c;
+      border-color: #8b5e3c;
+    }
+
+    /* ── Column headers for piece rows ── */
+    .row-headers {
+      /* matches the piece-row grid: name | qty | thick | width | length | remove */
+      display: grid;
+      grid-template-columns: 2fr 0.6fr 0.7fr 0.7fr 0.7fr 32px;
+      gap: 0.5rem;
+      margin-bottom: 0.3rem;
+      padding: 0 0.1rem;
+    }
+
+    .row-headers span {
+      font-size: 0.72rem;
+      font-weight: bold;
+      color: #7a5c3a;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Piece input rows ── */
+    #piece-rows { margin-bottom: 0.75rem; }
+
+    .piece-row {
+      display: grid;
+      /* part name | qty | thickness | width | length | remove btn */
+      grid-template-columns: 2fr 0.6fr 0.7fr 0.7fr 0.7fr 32px;
+      gap: 0.5rem;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    /* No bottom margin on inputs inside rows */
+    .piece-row input { margin-bottom: 0; }
+
+    /* ── Buttons ── */
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 4px;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+
+    .btn-add {
+      background: #d4b896;
+      color: #2c1f0e;
+      margin-bottom: 1rem;
+    }
+    .btn-add:hover { background: #c4a882; }
+
+    .btn-remove {
+      background: transparent;
+      color: #a05030;
+      padding: 0.3rem 0.5rem;
+      font-size: 1rem;
+      line-height: 1;
+    }
+    .btn-remove:hover { color: #7a3010; }
+
+    .btn-calculate {
+      width: 100%;
+      background: #7a5c3a;
+      color: #fff9f0;
+      padding: 0.75rem;
+      font-size: 1rem;
+      letter-spacing: 0.04em;
+    }
+    .btn-calculate:hover { background: #5a3a1a; }
+
+    /* ── Error message ── */
+    .error {
+      color: #a03020;
+      font-size: 0.85rem;
+      margin-bottom: 0.75rem;
+    }
+
+    /* ── Results section ── */
+    #results { display: none; }
+
+    /* "What to buy" callout box */
+    .buy-box {
+      background: #5a3a1a;
+      color: #fff9f0;
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    .buy-box .buy-label {
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      opacity: 0.75;
+      margin-bottom: 0.35rem;
+    }
+
+    .buy-box .buy-number {
+      font-size: 3rem;
+      font-weight: bold;
+      line-height: 1;
+    }
+
+    .buy-box .buy-unit {
+      font-size: 1rem;
+      opacity: 0.85;
+      margin-top: 0.25rem;
+    }
+
+    .buy-box .buy-note {
+      font-size: 0.78rem;
+      opacity: 0.65;
+      margin-top: 0.5rem;
+    }
+
+    /* Summary strip */
+    .summary {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+    }
+
+    .summary-box {
+      flex: 1;
+      min-width: 120px;
+      background: #f5ede0;
+      border: 1px solid #d4b896;
+      border-radius: 6px;
+      padding: 0.65rem 1rem;
+      text-align: center;
+    }
+
+    .summary-box .val {
+      font-size: 1.4rem;
+      font-weight: bold;
+      color: #5a3a1a;
+    }
+
+    .summary-box .lbl {
+      font-size: 0.72rem;
+      color: #7a5c3a;
+      margin-top: 0.15rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* Cut list table */
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      min-width: 520px;
+    }
+
+    thead th {
+      background: #7a5c3a;
+      color: #fff9f0;
+      padding: 0.55rem 0.75rem;
+      text-align: left;
+      font-size: 0.8rem;
+      letter-spacing: 0.03em;
+    }
+
+    tbody tr:nth-child(even) { background: #f5ede0; }
+    tbody tr:nth-child(odd)  { background: #fffdf8; }
+
+    tbody td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid #e8d5c0;
+    }
+
+    tfoot td {
+      padding: 0.55rem 0.75rem;
+      font-weight: bold;
+      background: #e8d5c0;
+    }
+
+    tfoot tr:first-child td { border-top: 2px solid #c4a882; }
+  </style>
+</head>
+<body>
+
+  <h1>&#128296; Board Feet Calculator</h1>
+  <p class="subtitle">Enter your cut list — find out exactly how much lumber to buy</p>
+
+  <!-- ── INPUT FORM ── -->
+  <div class="card">
+    <h2>Project Details</h2>
+
+    <label for="project-name">Project Name</label>
+    <input type="text" id="project-name" placeholder="e.g. Bookshelf, Workbench, Coffee Table…" />
+
+    <h2>Pieces Needed</h2>
+
+    <!-- Column labels above the input rows -->
+    <div class="row-headers">
+      <span>Part Name</span>
+      <span>Qty</span>
+      <span>Thick (in)</span>
+      <span>Width (in)</span>
+      <span>Length (in)</span>
+      <span></span>
+    </div>
+
+    <!-- Piece rows are added here dynamically -->
+    <div id="piece-rows"></div>
+
+    <p id="error-msg" class="error" style="display:none"></p>
+
+    <button class="btn-add" onclick="addPieceRow()">+ Add Piece</button>
+
+    <button class="btn-calculate" onclick="calculate()">Calculate Board Feet</button>
+  </div>
+
+  <!-- ── RESULTS ── -->
+  <div class="card" id="results">
+    <h2 id="results-title">Lumber Purchase List</h2>
+
+    <!-- "What to buy" big callout -->
+    <div class="buy-box">
+      <div class="buy-label">Bring this number to the store or lumber yard</div>
+      <div class="buy-number" id="buy-number">—</div>
+      <div class="buy-unit">board feet</div>
+      <div class="buy-note">Includes 15% added for waste and cutting allowance</div>
+    </div>
+
+    <!-- Supporting summary numbers -->
+    <div class="summary">
+      <div class="summary-box">
+        <div class="val" id="total-pieces">—</div>
+        <div class="lbl">Total Pieces</div>
+      </div>
+      <div class="summary-box">
+        <div class="val" id="net-bf">—</div>
+        <div class="lbl">Net Board Feet</div>
+      </div>
+      <div class="summary-box">
+        <div class="val" id="waste-bf">—</div>
+        <div class="lbl">Waste (15%)</div>
+      </div>
+    </div>
+
+    <!-- Cut list table -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Part Name</th>
+            <th>Qty</th>
+            <th>T (in)</th>
+            <th>W (in)</th>
+            <th>L (in)</th>
+            <th>BF Each</th>
+            <th>BF Total</th>
+          </tr>
+        </thead>
+        <tbody id="cut-list-body"></tbody>
+        <tfoot>
+          <tr>
+            <td colspan="6">Net board feet</td>
+            <td id="footer-net">—</td>
+          </tr>
+          <tr>
+            <td colspan="6">+ 15% waste &rarr; <strong>purchase this amount</strong></td>
+            <td id="footer-gross">—</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // ── Board foot formula ──────────────────────────────────────────────────
+    // Board feet = (thickness_in × width_in × length_in) / 144
+    // 144 = square inches in one board foot (12" × 12" × 1")
+    function boardFeet(thickness, width, length) {
+      return (thickness * width * length) / 144;
+    }
+
+    // ── Add a piece input row ───────────────────────────────────────────────
+    let rowCount = 0;
+
+    function addPieceRow() {
+      rowCount++;
+      const container = document.getElementById('piece-rows');
+
+      const row = document.createElement('div');
+      row.className = 'piece-row';
+
+      // Part name (text)
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.placeholder = 'e.g. Side panel';
+      nameInput.className = 'part-name';
+
+      // Quantity
+      const qtyInput = document.createElement('input');
+      qtyInput.type = 'number';
+      qtyInput.min = '1';
+      qtyInput.step = '1';
+      qtyInput.value = '1';
+      qtyInput.className = 'qty';
+
+      // Thickness
+      const thickInput = document.createElement('input');
+      thickInput.type = 'number';
+      thickInput.min = '0.1';
+      thickInput.step = '0.125'; // common lumber increments (e.g. 0.75, 1, 1.5)
+      thickInput.placeholder = '0.75';
+      thickInput.className = 'thick';
+
+      // Width
+      const widInput = document.createElement('input');
+      widInput.type = 'number';
+      widInput.min = '0.1';
+      widInput.step = '0.1';
+      widInput.placeholder = '6';
+      widInput.className = 'wid';
+
+      // Length
+      const lenInput = document.createElement('input');
+      lenInput.type = 'number';
+      lenInput.min = '0.1';
+      lenInput.step = '0.1';
+      lenInput.placeholder = '24';
+      lenInput.className = 'len';
+
+      // Remove button
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'btn-remove';
+      removeBtn.textContent = '✕';
+      removeBtn.title = 'Remove this piece';
+      removeBtn.onclick = function () {
+        container.removeChild(row);
+      };
+
+      row.appendChild(nameInput);
+      row.appendChild(qtyInput);
+      row.appendChild(thickInput);
+      row.appendChild(widInput);
+      row.appendChild(lenInput);
+      row.appendChild(removeBtn);
+      container.appendChild(row);
+    }
+
+    // ── Run the calculation ─────────────────────────────────────────────────
+    function calculate() {
+      const errorEl = document.getElementById('error-msg');
+      errorEl.style.display = 'none';
+
+      // Grab all piece rows currently in the DOM
+      const rows = document.querySelectorAll('.piece-row');
+
+      if (rows.length === 0) {
+        showError('Add at least one piece before calculating.');
+        return;
+      }
+
+      const pieces = [];
+
+      for (let i = 0; i < rows.length; i++) {
+        const name  = rows[i].querySelector('.part-name').value.trim() || ('Piece ' + (i + 1));
+        const qty   = parseInt(rows[i].querySelector('.qty').value, 10);
+        const thick = parseFloat(rows[i].querySelector('.thick').value);
+        const wid   = parseFloat(rows[i].querySelector('.wid').value);
+        const len   = parseFloat(rows[i].querySelector('.len').value);
+
+        // Validate numbers
+        if (isNaN(qty) || qty < 1 || isNaN(thick) || thick <= 0 ||
+            isNaN(wid) || wid <= 0 || isNaN(len) || len <= 0) {
+          showError('Please fill in valid Qty, Thickness, Width, and Length for every piece.');
+          return;
+        }
+
+        const bfEach  = boardFeet(thick, wid, len);
+        const bfTotal = bfEach * qty;
+
+        pieces.push({ name, qty, thick, wid, len, bfEach, bfTotal });
+      }
+
+      // Project name fallback
+      const projectName = document.getElementById('project-name').value.trim() || 'My Project';
+
+      // Totals
+      const totalPieces = pieces.reduce((sum, p) => sum + p.qty, 0);
+      const netBF       = pieces.reduce((sum, p) => sum + p.bfTotal, 0);
+      const wasteBF     = netBF * 0.15;          // the 15% waste amount
+      const grossBF     = netBF + wasteBF;        // what to actually purchase
+
+      // ── Render results ──────────────────────────────────────────────────
+
+      document.getElementById('results-title').textContent = projectName + ' — Lumber Purchase List';
+
+      // Big "what to buy" number (rounded up to nearest whole board foot)
+      document.getElementById('buy-number').textContent = Math.ceil(grossBF);
+
+      // Summary strip
+      document.getElementById('total-pieces').textContent = totalPieces;
+      document.getElementById('net-bf').textContent       = netBF.toFixed(2);
+      document.getElementById('waste-bf').textContent     = wasteBF.toFixed(2);
+
+      // Footer totals
+      document.getElementById('footer-net').textContent   = netBF.toFixed(2) + ' BF';
+      document.getElementById('footer-gross').textContent = Math.ceil(grossBF) + ' BF';
+
+      // Build the cut list table rows
+      const tbody = document.getElementById('cut-list-body');
+      tbody.innerHTML = ''; // clear any previous results
+
+      pieces.forEach(function (p) {
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td>' + p.name + '</td>' +
+          '<td>' + p.qty + '</td>' +
+          '<td>' + p.thick + '"</td>' +
+          '<td>' + p.wid + '"</td>' +
+          '<td>' + p.len + '"</td>' +
+          '<td>' + p.bfEach.toFixed(3) + '</td>' +
+          '<td>' + p.bfTotal.toFixed(3) + '</td>';
+        tbody.appendChild(tr);
+      });
+
+      // Show results and scroll to them
+      const resultsEl = document.getElementById('results');
+      resultsEl.style.display = 'block';
+      resultsEl.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // ── Helper: display an error message ───────────────────────────────────
+    function showError(msg) {
+      const el = document.getElementById('error-msg');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    // ── Start with one row already visible ─────────────────────────────────
+    addPieceRow();
+  </script>
+
+</body>
+</html>
