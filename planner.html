@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Planner</title>
+  <style>
+    /* ── Reset & base ── */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Georgia, serif;
+      background: #f5f0e8;
+      color: #2c1f0e;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    /* ── Nav ── */
+    .site-nav {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+      padding: 0.6rem 1rem;
+      background: #3d2208;
+      border-radius: 6px;
+      max-width: 780px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .site-nav a {
+      font-size: 0.8rem;
+      color: #d4a855;
+      text-decoration: none;
+      letter-spacing: 0.04em;
+    }
+
+    .site-nav a:hover { text-decoration: underline; }
+
+    .site-nav a.active {
+      color: #fff9f0;
+      font-weight: bold;
+      pointer-events: none;
+    }
+
+    /* ── Page title ── */
+    h1 {
+      text-align: center;
+      font-size: 1.8rem;
+      margin-bottom: 0.25rem;
+      letter-spacing: 0.03em;
+    }
+
+    .subtitle {
+      text-align: center;
+      font-size: 0.9rem;
+      color: #7a5c3a;
+      margin-bottom: 2rem;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: #fff9f0;
+      border: 1px solid #d4b896;
+      border-radius: 8px;
+      padding: 1.5rem;
+      max-width: 780px;
+      margin: 0 auto 2rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    .card h2 {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid #d4b896;
+      padding-bottom: 0.5rem;
+      color: #5a3a1a;
+    }
+
+    /* ── Form fields ── */
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: bold;
+      margin-bottom: 0.25rem;
+      color: #5a3a1a;
+    }
+
+    input[type="text"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 0.55rem 0.75rem;
+      border: 1px solid #c4a882;
+      border-radius: 4px;
+      background: #fffdf8;
+      font-size: 0.95rem;
+      font-family: Georgia, serif;
+      color: #2c1f0e;
+      margin-bottom: 1rem;
+    }
+
+    textarea { resize: vertical; min-height: 80px; }
+
+    input:focus, select:focus, textarea:focus {
+      outline: 2px solid #8b5e3c;
+      border-color: #8b5e3c;
+    }
+
+    /* ── Submit button ── */
+    .btn-generate {
+      width: 100%;
+      background: #7a5c3a;
+      color: #fff9f0;
+      border: none;
+      border-radius: 4px;
+      padding: 0.75rem;
+      font-size: 1rem;
+      font-family: Georgia, serif;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: background 0.15s;
+    }
+
+    .btn-generate:hover { background: #5a3a1a; }
+    .btn-generate:disabled { background: #c4a882; cursor: not-allowed; }
+
+    /* ── Status / error ── */
+    .status {
+      text-align: center;
+      font-size: 0.85rem;
+      color: #7a5c3a;
+      margin-top: 0.75rem;
+      min-height: 1.2em;
+      font-style: italic;
+    }
+
+    .error-msg {
+      color: #a03020;
+      font-style: normal;
+    }
+
+    /* ── Results card ── */
+    #results-card { display: none; }
+
+    #results-title {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid #d4b896;
+      padding-bottom: 0.5rem;
+      color: #5a3a1a;
+    }
+
+    /* ── Styles for the HTML Claude returns ── */
+    #plan-output h2 {
+      font-size: 1.15rem;
+      color: #3d2208;
+      margin: 1.25rem 0 0.5rem;
+      padding-bottom: 0.3rem;
+      border-bottom: 1px solid #e8d5c0;
+    }
+
+    #plan-output h2:first-child { margin-top: 0; }
+
+    #plan-output h3 {
+      font-size: 1rem;
+      color: #5a3a1a;
+      margin: 0.9rem 0 0.35rem;
+    }
+
+    #plan-output p {
+      font-size: 0.92rem;
+      line-height: 1.6;
+      margin-bottom: 0.6rem;
+      color: #2c1f0e;
+    }
+
+    #plan-output ul,
+    #plan-output ol {
+      padding-left: 1.4rem;
+      margin-bottom: 0.75rem;
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+
+    #plan-output li { margin-bottom: 0.25rem; }
+
+    /* Cut list table */
+    #plan-output table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin-bottom: 1rem;
+    }
+
+    #plan-output th {
+      background: #7a5c3a;
+      color: #fff9f0;
+      padding: 0.5rem 0.75rem;
+      text-align: left;
+    }
+
+    #plan-output td {
+      padding: 0.45rem 0.75rem;
+      border-bottom: 1px solid #e8d5c0;
+    }
+
+    #plan-output tr:nth-child(even) td { background: #f5ede0; }
+    #plan-output tr:nth-child(odd)  td { background: #fffdf8; }
+
+    #plan-output strong { color: #3d2208; }
+
+    /* Blinking cursor while streaming */
+    .cursor::after {
+      content: '▋';
+      animation: blink 0.7s step-end infinite;
+      color: #7a5c3a;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Nav ── -->
+  <nav class="site-nav">
+    <a href="index.html">&#128296; Cut List</a>
+    <a href="species.html">&#128218; Species Guide</a>
+    <a href="planner.html" class="active">&#129504; Project Planner</a>
+  </nav>
+
+  <h1>&#129504; Project Planner</h1>
+  <p class="subtitle">Describe your project — get a complete plan from an expert woodworking instructor</p>
+
+  <!-- ── Input form ── -->
+  <div class="card">
+    <h2>Project Details</h2>
+
+    <label for="skill-level">Skill Level</label>
+    <select id="skill-level">
+      <option value="beginner">Beginner — new to woodworking</option>
+      <option value="intermediate" selected>Intermediate — comfortable with basic tools</option>
+      <option value="advanced">Advanced — experienced woodworker</option>
+    </select>
+
+    <label for="wood-species">Wood Species</label>
+    <input
+      type="text"
+      id="wood-species"
+      placeholder="e.g. White Oak, Eastern White Pine, Walnut…"
+    />
+
+    <label for="project-idea">Project Idea</label>
+    <textarea
+      id="project-idea"
+      placeholder="e.g. A small bookshelf with three shelves for a living room, roughly 36 inches wide and 48 inches tall"
+      rows="4"
+    ></textarea>
+
+    <button class="btn-generate" id="generate-btn" onclick="generatePlan()">
+      Generate Project Plan
+    </button>
+
+    <p class="status" id="status"></p>
+  </div>
+
+  <!-- ── Results ── -->
+  <div class="card" id="results-card">
+    <div id="results-title">Project Plan</div>
+    <!-- Claude's HTML is injected here as it streams in -->
+    <div id="plan-output" class="cursor"></div>
+  </div>
+
+  <script>
+    async function generatePlan() {
+      // Read form values
+      const skill_level  = document.getElementById('skill-level').value;
+      const wood_species = document.getElementById('wood-species').value.trim();
+      const project_idea = document.getElementById('project-idea').value.trim();
+
+      // Validate
+      if (!wood_species || !project_idea) {
+        setStatus('Please fill in the wood species and project idea.', true);
+        return;
+      }
+
+      // Reset UI
+      const btn       = document.getElementById('generate-btn');
+      const output    = document.getElementById('plan-output');
+      const resultsCard = document.getElementById('results-card');
+
+      btn.disabled = true;
+      output.innerHTML = '';
+      output.classList.add('cursor');   // show blinking cursor while streaming
+      resultsCard.style.display = 'block';
+      resultsCard.scrollIntoView({ behavior: 'smooth' });
+      setStatus('Generating your project plan…');
+
+      let accumulated = ''; // collects all streamed text
+
+      try {
+        // POST to our Express server
+        const response = await fetch('/api/plan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ skill_level, wood_species, project_idea })
+        });
+
+        // Read the Server-Sent Events stream
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          // Each chunk may contain multiple SSE lines — split them up
+          const raw = decoder.decode(value, { stream: true });
+          const lines = raw.split('\n');
+
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+
+            const payload = line.slice(6); // strip "data: "
+
+            if (payload === '[DONE]') {
+              // Streaming complete — render the full HTML
+              output.classList.remove('cursor');
+              output.innerHTML = accumulated;
+              setStatus('');
+              break;
+            }
+
+            try {
+              const parsed = JSON.parse(payload);
+
+              if (parsed.error) {
+                // Claude or server returned an error
+                setStatus('Error: ' + parsed.error, true);
+                output.classList.remove('cursor');
+                break;
+              }
+
+              if (parsed.text) {
+                // Accumulate the text chunk
+                accumulated += parsed.text;
+                // Show raw text while streaming (safe plain text preview)
+                output.textContent = accumulated;
+              }
+            } catch (_) {
+              // Ignore malformed SSE lines
+            }
+          }
+        }
+
+      } catch (err) {
+        setStatus('Could not reach the server: ' + err.message, true);
+        output.classList.remove('cursor');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // Helper: set the status line text (red if error)
+    function setStatus(msg, isError) {
+      const el = document.getElementById('status');
+      el.textContent = msg;
+      el.className = 'status' + (isError ? ' error-msg' : '');
+    }
+  </script>
+
+</body>
+</html>

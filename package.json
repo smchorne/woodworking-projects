@@ -1,0 +1,26 @@
+{
+  "name": "woodworking-tools",
+  "version": "1.0.0",
+  "description": "This is a test app that I am setting up to learn Claude code. Hopefully this works!!!",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/smchorne/woodworking-projects.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/smchorne/woodworking-projects/issues"
+  },
+  "homepage": "https://github.com/smchorne/woodworking-projects#readme",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1"
+  }
+}
