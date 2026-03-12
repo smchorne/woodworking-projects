@@ -1,100 +1,157 @@
-// Load environment variables from .env (ANTHROPIC_API_KEY)
+// Load ANTHROPIC_API_KEY from .env
 require('dotenv').config();
 
-const express  = require('express');
-const Anthropic = require('@anthropic-ai/sdk');
-const path     = require('path');
+const express = require('express');
+const path    = require('path');
 
-const app    = express();
-const PORT   = 3000;
-const client = new Anthropic(); // reads ANTHROPIC_API_KEY from .env automatically
+const app  = express();
+const PORT = 3000;
 
-// Parse incoming JSON request bodies
 app.use(express.json());
 
-// Serve all HTML, JSON, and asset files from the project folder.
+// Serve HTML, JSON, and asset files from the project root.
 // Express.static skips dotfiles by default, so .env is never exposed.
 app.use(express.static(path.join(__dirname)));
 
 // ── POST /api/plan ──────────────────────────────────────────────────────────
-// Accepts { skill_level, wood_species, project_idea } in the request body.
-// Streams the Anthropic response back to the browser using Server-Sent Events
-// so the plan appears word-by-word rather than waiting for the full response.
+// Accepts { skill_level, project_idea } from the browser.
+// Uses the Agent SDK to run an agent that:
+//   1. Reads wood-species.json via the filesystem MCP server
+//   2. Recommends the best species for the project + skill level
+//   3. Generates a full project plan with cut list and board feet
+// Streams status updates and the final HTML plan back via Server-Sent Events.
 app.post('/api/plan', async (req, res) => {
-  const { skill_level, wood_species, project_idea } = req.body;
+  const { skill_level, project_idea } = req.body;
 
-  // Basic validation
-  if (!skill_level || !wood_species || !project_idea) {
+  if (!skill_level || !project_idea) {
     return res.status(400).json({
-      error: 'skill_level, wood_species, and project_idea are all required.'
+      error: 'skill_level and project_idea are required.'
     });
   }
 
-  // Set up Server-Sent Events headers
-  res.setHeader('Content-Type', 'text/event-stream');
+  // Set up Server-Sent Events
+  res.setHeader('Content-Type',  'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('Connection',    'keep-alive');
+
+  // Let the browser know we've started before the agent fires up
+  res.write(`data: ${JSON.stringify({ status: 'Reading species database and generating your plan…' })}\n\n`);
 
   try {
-    // Stream the response from Claude
-    const stream = client.messages.stream({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 4096,
+    // Agent SDK is ESM-only — use dynamic import from CommonJS
+    const { query } = await import('@anthropic-ai/claude-agent-sdk');
 
-      // System prompt defines Claude's role and the output format
-      system: `You are an expert woodworking instructor with decades of hands-on workshop experience. You teach students at all skill levels — from complete beginners to advanced craftspeople.
+    // Build a clean environment for the Agent SDK subprocess.
+    // - Add ~/.local/bin so it can find the claude CLI
+    // - Remove CLAUDECODE so Claude Code doesn't refuse to start inside another session
+    const agentEnv = {
+      ...process.env,
+      PATH: '/Users/sunnyhorne/.local/bin:' + process.env.PATH,
+    };
+    delete agentEnv.CLAUDECODE;
 
-When given a project idea, skill level, and wood species, write a thorough, practical project plan.
+    let planHTML = '';
 
-Format your entire response as clean HTML using only these tags: <h2>, <h3>, <ul>, <ol>, <li>, <p>, <strong>, <em>, <table>, <tr>, <th>, <td>.
+    for await (const message of query({
+      prompt: buildPrompt(skill_level, project_idea),
+      options: {
+        // Set cwd so the agent can find wood-species.json
+        cwd: __dirname,
 
-Do NOT include <html>, <head>, <body>, or <style> tags — only inner content that will be injected into a page.
+        // Allow the built-in Read tool for direct file access
+        allowedTools: ['Read'],
 
-Always include these sections in order:
-1. Project Overview — brief description, skill level note, estimated time
-2. Materials & Tools Needed — two sub-lists: Materials and Tools
-3. Cut List — an HTML table with columns: Part | Qty | Thickness | Width | Length (all in inches)
-4. Step-by-Step Instructions — numbered steps with clear action verbs
-5. Tips for This Skill Level — practical advice matched to the user's experience
-6. Finishing Recommendations — finishing options suited to the chosen wood species`,
+        // Filesystem MCP server gives the agent richer file access:
+        // list_directory, read_file, search_files, etc.
+        mcpServers: {
+          filesystem: {
+            command: 'npx',
+            args: ['-y', '@modelcontextprotocol/server-filesystem', __dirname]
+          }
+        },
 
-      messages: [{
-        role: 'user',
-        content: `Please create a complete woodworking project plan for the following:
+        // Auto-accept any file reads without prompting
+        permissionMode: 'acceptEdits',
 
-Project Idea: ${project_idea}
-Skill Level: ${skill_level}
-Wood Species: ${wood_species}
+        // Pass the clean environment to the agent subprocess
+        env: agentEnv
+      }
+    })) {
+      // The agent yields multiple message types as it works.
+      // We only care about the final ResultMessage which has a 'result' key.
+      if ('result' in message) {
+        planHTML = message.result;
+      }
+    }
 
-Write the full plan as formatted HTML.`
-      }]
-    });
+    // Strip markdown code fences if Claude wrapped the HTML in them
+    planHTML = stripCodeFences(planHTML);
 
-    // Send each streamed text chunk to the browser as an SSE event.
-    // JSON.stringify safely escapes newlines and special characters.
-    stream.on('text', (text) => {
-      res.write(`data: ${JSON.stringify({ text })}\n\n`);
-    });
-
-    // Tell the browser the stream is finished
-    stream.on('finalMessage', () => {
-      res.write('data: [DONE]\n\n');
-      res.end();
-    });
-
-    // Forward stream errors to the browser
-    stream.on('error', (err) => {
-      res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
-      res.end();
-    });
+    // Send the complete plan to the browser and close the stream
+    res.write(`data: ${JSON.stringify({ text: planHTML })}\n\n`);
+    res.write('data: [DONE]\n\n');
+    res.end();
 
   } catch (err) {
-    // Catch setup errors (e.g. bad API key)
     res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
     res.end();
   }
 });
 
+// ── Build the agent prompt ──────────────────────────────────────────────────
+function buildPrompt(skill_level, project_idea) {
+  const levelLabel = skill_level.charAt(0).toUpperCase() + skill_level.slice(1);
+
+  return `You are an expert woodworking instructor helping a ${skill_level} woodworker plan a project.
+
+Project: ${project_idea}
+
+Follow these steps:
+1. Use the Read tool to read the file "wood-species.json" in the current directory. It contains real data on wood species including hardness, grain type, best uses, beginner_friendly flag, and finish recommendations.
+2. From that data, choose the 1-2 best species for this project and skill level. Use the beginner_friendly flag and best_uses array to guide your choice.
+3. Generate a complete project plan formatted as clean HTML.
+
+Your entire response must be valid HTML content only — start with an <h2> tag and end with the last closing HTML tag. Do not include any explanatory text, markdown, or code fences outside the HTML.
+
+Use ONLY these tags: <h2>, <h3>, <ul>, <ol>, <li>, <p>, <strong>, <em>, <table>, <tr>, <th>, <td>.
+Do NOT include <html>, <head>, <body>, or <style> tags.
+
+Include these sections in order:
+
+<h2>Recommended Wood Species</h2>
+Name, why it suits this project and skill level, Janka hardness, grain type, and finish tip — all pulled from the actual JSON data.
+
+<h2>Project Overview</h2>
+Brief description, estimated build time, difficulty note for a ${skill_level}.
+
+<h2>Materials & Tools Needed</h2>
+Two sub-lists: Materials and Tools.
+
+<h2>Cut List</h2>
+HTML table with columns: Part | Qty | Thickness (in) | Width (in) | Length (in)
+
+<h2>Board Feet Required</h2>
+For each piece: board feet = (thickness × width × length) / 144. Multiply by qty. Sum all pieces for net total. Add 15% for waste. State clearly: "Purchase X board feet."
+
+<h2>Step-by-Step Instructions</h2>
+Numbered steps with clear action verbs, appropriate for a ${skill_level}.
+
+<h2>Finishing Recommendations</h2>
+Use the finish_recommendation field from the JSON for the chosen species.
+
+<h2>Tips for ${levelLabel} Woodworkers</h2>
+Practical advice matched to this skill level.`;
+}
+
+// ── Strip markdown code fences if present ──────────────────────────────────
+// Claude sometimes wraps HTML output in ```html ... ``` even when told not to.
+function stripCodeFences(text) {
+  return text
+    .replace(/^```[a-z]*\n?/i, '')  // opening fence
+    .replace(/\n?```$/,        '')  // closing fence
+    .trim();
+}
+
 app.listen(PORT, () => {
-  console.log(`\nWoodworking Project Planner running at http://localhost:${PORT}/planner.html\n`);
+  console.log(`\nWoodworking Project Planner → http://localhost:${PORT}/planner.html\n`);
 });
