@@ -35,7 +35,7 @@ app.post('/api/plan', async (req, res) => {
   res.setHeader('Connection',    'keep-alive');
 
   // Let the browser know we've started before the agent fires up
-  res.write(`data: ${JSON.stringify({ status: 'Reading species database and generating your plan…' })}\n\n`);
+  res.write(`data: ${JSON.stringify({ status: 'Generating your plan… please allow up to 2 minutes' })}\n\n`);
 
   try {
     // Agent SDK is ESM-only — use dynamic import from CommonJS
